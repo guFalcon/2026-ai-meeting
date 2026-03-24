@@ -1,0 +1,26 @@
+services:
+  web:
+    image: gufalcon/cms-gui:latest
+    restart: always
+    ports:
+      - "1280:80"
+      - "12443:443"
+    environment:
+      - HTTP_PORT=80
+      - HTTP_HOST=0.0.0.0
+    volumes:
+      - "/app/deploy/cms-gui/nginx.conf:/etc/nginx/nginx.conf"
+      - "/app/deploy/cms-gui/config.js:/usr/share/nginx/html/config.js"
+    command: ["nginx", "-g", "daemon off;"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.cms-gui.port=80"
+      - "traefik.cms-gui.backend=cms-gui"
+      - "traefik.cms-gui.frontend.rule=Host:cms.lan.elite-zettl.at"
+      - "traefik.cms-gui.frontend.entryPoints=http,https"
+      - "traefik.cms-gui.frontend.priority=1"
+
+networks:
+  default:
+    external: true
+    name: proxy_default

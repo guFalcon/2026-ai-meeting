@@ -1,0 +1,338 @@
+class DateUtils {
+  private static instanceField: DateUtils
+
+  public static getInstance () {
+    if (!this.instanceField) {
+      this.instanceField || (this.instanceField = new DateUtils())
+    }
+    return this.instanceField
+  }
+
+  public static readonly unitsInMinutes = [
+    1 * 60 * 24 * 365,
+    1 * 60 * 24 * 30,
+    1 * 60 * 24 * 7,
+    1 * 60 * 24,
+    1 * 60,
+    1
+  ]
+
+  /**
+   * Calculates the date the last monday was on starting with a given date.
+   * Returns date, if it's already a monday.
+   * @param date the date to count backwards from
+   * @returns the date of the last monday
+   */
+  public getLastMondayFor (date) {
+    if (!date) {
+      date = new Date()
+    }
+    const prevMonday = new Date(date.valueOf())
+    prevMonday.setHours(0)
+    prevMonday.setMinutes(0)
+    prevMonday.setSeconds(0)
+    prevMonday.setMilliseconds(0)
+    prevMonday.setDate(prevMonday.getDate() - ((prevMonday.getDay() + 6) % 7))
+    return prevMonday
+  }
+
+  /**
+   * Calculates the date of the last monday before the last monday.
+   * If date is already a monday, you'll get the monday before that.
+   * @param date the date to count backwards from
+   * @returns the date of the last monday before the last monday
+   */
+  public getPreviousMondayFor (date) {
+    let prevMonday = this.getLastMondayFor(date)
+    prevMonday.setDate(prevMonday.getDate() - 1)
+    prevMonday = this.getLastMondayFor(prevMonday)
+    return prevMonday
+  }
+
+  /**
+   * Returns the week number for this date.
+   * https://stackoverflow.com/questions/9045868/javascript-date-getweek
+   * @param  {Date} date
+   * @param  {number} [dowOffset] — The day of week the week "starts" on for your locale - it can be from `0` to `6`.
+   * For 'USA, Sunday' `dowOffset` is `0`. If `dowOffset` is 1 (Monday - default), the week returned is the ISO 8601 week number.
+   * @return {number}
+   */
+  public getWeek (date, dowOffset = 1) {
+    /* getWeek() was developed by Nick Baicoianu at MeanFreePath: http://www.meanfreepath.com */
+    const newYear = new Date(date.getFullYear(), 0, 1)
+    let day = newYear.getDay() - dowOffset // the day of week the year begins on
+    day = day >= 0 ? day : day + 7
+    const daynum =
+      Math.floor(
+        (date.getTime() -
+          newYear.getTime() -
+          (date.getTimezoneOffset() - newYear.getTimezoneOffset()) * 60000) /
+        86400000
+      ) + 1
+    // if the year starts before the middle of a week
+    if (day < 4) {
+      const weeknum = Math.floor((daynum + day - 1) / 7) + 1
+      if (weeknum > 52) {
+        const nYear = new Date(date.getFullYear() + 1, 0, 1)
+        let nday = nYear.getDay() - dowOffset
+        nday = nday >= 0 ? nday : nday + 7
+        /* if the next year starts before the middle of
+          the week, it is week #1 of that year */
+        return nday < 4 ? 1 : 53
+      }
+      return weeknum
+    } else {
+      return Math.floor((daynum + day - 1) / 7)
+    }
+  }
+
+  public isoToDateLong (d, locale) {
+    return this.dateToDateLong(new Date(d + 'Z'), locale)
+  }
+
+  public dateToDateLong (d, locale) {
+    return d.toLocaleDateString(locale, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    })
+  }
+
+  public isoToDateLongPadded (d, locale) {
+    return this.dateToDateLongPadded(new Date(d + 'Z'), locale)
+  }
+
+  public dateToDateLongPadded (d, locale) {
+    return d.toLocaleDateString(locale, {
+      weekday: 'long',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  }
+
+  public isoToDate (d, locale) {
+    return this.dateToDate(new Date(d + 'Z'), locale)
+  }
+
+  public dateToDate (d, locale) {
+    return d.toLocaleDateString(locale)
+  }
+
+  public isoToDatePadded (d, locale) {
+    return this.dateToDatePadded(new Date(d + 'Z'), locale)
+  }
+
+  public dateToDatePadded (d, locale) {
+    return d.toLocaleDateString(locale, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  }
+
+  public monthDiff (from, to) {
+    let months = (to.getFullYear() - from.getFullYear()) * 12
+    months -= from.getMonth()
+    months += to.getMonth()
+    return months <= 0 ? 0 : months
+  }
+
+  public isoToTime (d, locale) {
+    return this.dateToTime(new Date(d + 'Z'), locale)
+  }
+
+  public dateToTime (d, locale) {
+    return d.toLocaleTimeString(locale)
+  }
+
+  public isoToShortTime (d, locale) {
+    return this.dateToShortTime(new Date(d + 'Z'), locale)
+  }
+
+  public dateToShortTime (d, locale) {
+    return d.toLocaleTimeString(locale, {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  public isoToShortDateTime (d, locale) {
+    return (
+      this.isoToDatePadded(d, locale) + ' ' + this.isoToShortTime(d, locale)
+    )
+  }
+
+  public dateToShortDateTime (d, locale) {
+    return (
+      this.dateToDatePadded(d, locale) + ' ' + this.dateToShortTime(d, locale)
+    )
+  }
+
+  public isSameDay (d1, d2) {
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    )
+  }
+
+  public getUtcOf (d) {
+    return new Date(d.toUTCString().slice(0, -4))
+  }
+
+  public getUtc () {
+    return this.getUtcOf(new Date())
+  }
+
+  public fromUtc (d) {
+    return new Date(d + 'Z')
+  }
+
+  public toIsoDate (d) {
+    const year = d.getFullYear()
+    const month = d.getMonth() + 1
+    const dt = d.getDate()
+    return `${year}-${this.pad(month)}-${this.pad(dt)}`
+  }
+
+  public pad (d) {
+    return ('00' + d).slice(-2)
+  }
+
+  public getIsoDateOf (s) {
+    return `${s.getFullYear()}-${this.pad(s.getMonth() + 1)}-${this.pad(
+      s.getDate()
+    )}`
+  }
+
+  public getIsoTimeOf (s) {
+    return `${('00' + s.getHours()).slice(-2)}:${('00' + s.getMinutes()).slice(
+      -2
+    )}`
+  }
+
+  public roundTimeToQuater (time, down = true) {
+    const roundTo = 15 // minutes
+    const roundDownTime = roundTo * 60 * 1000
+    const mod = time % roundDownTime
+    const rDown = time - mod
+    return down
+      ? rDown
+      : mod < (roundDownTime / 2) ? rDown : rDown + roundDownTime
+  }
+
+  private getCountAndUnit (minutes, divisor) {
+    if (minutes % divisor === 0) {
+      return {
+        count: minutes / divisor,
+        unit: divisor
+      }
+    }
+    return null
+  }
+
+  private getCountAndUnitFrom (minutes) {
+    for (const divisor of DateUtils.unitsInMinutes) {
+      const r = this.getCountAndUnit(minutes, divisor)
+      if (r !== null) {
+        return r
+      }
+    }
+    return {
+      count: minutes,
+      unit: 1
+    }
+  }
+
+  public getStartEnd (event) {
+    let s = new Date(event.startsOn + 'Z')
+    if (event.isEventSeries) {
+      s = new Date(
+        `${this.getIsoDateOf(s)}T${event.startsOnLocalTime.slice(0, 5)}`
+      )
+    }
+    let e =
+      event.endsOn == null
+        ? new Date(new Date(event.startsOn + 'Z').getTime())
+        : new Date(event.endsOn + 'Z')
+    if (event.isEventSeries) {
+      e = new Date(
+        `${this.getIsoDateOf(e)}T${event.endsOnLocalTime.slice(0, 5)}`
+      )
+    }
+    return { start: s, end: e }
+  }
+
+  public setStartEndTimeDate (event, s, e) {
+    event.startDate = this.getIsoDateOf(s)
+    event.endDate = this.getIsoDateOf(e)
+    event.startTime = this.getIsoTimeOf(s)
+    event.endTime = this.getIsoTimeOf(e)
+  }
+
+  public async initializeEvent (event, locale) {
+    // console.log('initialize')
+    event.isEventSeries =
+      event.eventSeries != null && event.eventSeries !== 'NONE'
+    event.isAlarmTrigger =
+      event.emittedIncidentMessageLocKey != null &&
+      event.emittedIncidentSeverity != null
+    const r = this.getStartEnd(event)
+    const s = r.start
+    const e = r.end
+
+    const bs = new Date(
+      event.baseStartsOn == null
+        ? event.startsOn + 'Z'
+        : event.baseStartsOn + 'Z'
+    )
+    const be = event.baseEndsOn == null ? e : new Date(event.baseEndsOn + 'Z')
+    const se = event.seriesEndsOn == null ? be : new Date(event.seriesEndsOn)
+    event.start = s
+    event.end = e
+    this.setStartEndTimeDate(event, s, e)
+    event.baseStartDate = this.getIsoDateOf(bs)
+    event.baseStartTime = this.getIsoTimeOf(bs)
+    event.baseEndDate = this.getIsoDateOf(be)
+    event.baseEndTime = this.getIsoTimeOf(be)
+    event.seriesEndDate = this.getIsoDateOf(se)
+
+    event.enabled2 = false
+    event.enabled3 = false
+    if (event.minutesUntilYellow == null) {
+      event.count2 = 1
+      event.unit2 = 1 * 60 * 24 * 30
+    } else {
+      const r = this.getCountAndUnitFrom(event.minutesUntilYellow)
+      event.count2 = r.count
+      event.unit2 = r.unit
+      event.enabled2 = true
+    }
+    if (event.minutesUntilRed == null) {
+      event.count3 = 1
+      event.unit3 = 1 * 60 * 24 * 30
+    } else {
+      const r = this.getCountAndUnitFrom(event.minutesUntilRed)
+      event.count3 = r.count
+      event.unit3 = r.unit
+      event.enabled3 = true
+    }
+    if (
+      event.emittedIncidentSeverity == null ||
+      event.emittedIncidentSeverity === undefined
+    ) {
+      event.emittedIncidentSeverity = 'GREEN'
+    }
+    if (event.severity2 == null || event.severity2 === undefined) {
+      event.severity2 = 'YELLOW'
+    }
+    if (event.severity3 == null || event.severity3 === undefined) {
+      event.severity3 = 'RED'
+    }
+    // console.log('initializeEvent', event, locale)
+  }
+}
+
+export const singleton = DateUtils.getInstance()
